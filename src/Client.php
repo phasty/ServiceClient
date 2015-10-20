@@ -1,5 +1,5 @@
 <?php
-namespace Ru7733\ServiceClient {
+namespace Phasty\ServiceClient {
     use \Phasty\Stream\StreamSet;
     use \Phasty\Stream\Stream;
 
@@ -28,8 +28,6 @@ namespace Ru7733\ServiceClient {
             return $socket;
         }
 
-
-
         public function get($uri, $arguments) {
             $fullUri   = $this->getServiceUri() . $uri;
             $parsedUri = parse_url($fullUri);
@@ -52,7 +50,7 @@ namespace Ru7733\ServiceClient {
             }
             restore_error_handler();
 
-            return new Stream($socket);
+            return new Result(new Stream($socket));
         }
 
         public function waitAllServices() {

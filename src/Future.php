@@ -1,8 +1,9 @@
 <?php
-namespace Ru7733\ServiceClient {
+namespace Phasty\ServiceClient {
     use \Phasty\Stream\Stream;
     use \Phasty\Stream\StreamSet;
     use \Phasty\Stream\Timer;
+
     class Future {
         protected $value     = null;
         protected $socket    = null;
@@ -83,7 +84,7 @@ namespace Ru7733\ServiceClient {
                     throw new \Exception($event->getBody());
                 });
 
-                $timer = new Timer(1, 3000000, function() {
+                $timer = new Timer(10, 3000000, function() {
                     $this->socket->close();
                     throw new \Exception("Operation timed out");
                 });

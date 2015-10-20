@@ -1,5 +1,5 @@
 <?php
-namespace Ru7733\ServiceClient {
+namespace Phasty\ServiceClient {
     use \React\Promise\Deferred;
     use \Phasty\Stream\StreamSet;
     use \Phasty\Stream\Stream;
@@ -36,7 +36,7 @@ namespace Ru7733\ServiceClient {
             $streamSet = \Phasty\Stream\StreamSet::instance();
             $streamSet->addReadStream($stream);
 
-            $timer = new Timer(0, 3000000, function() use ($stream, $deferred) {
+            $timer = new Timer(20, 3000000, function() use ($stream, $deferred) {
                 $deferred->reject(new \Exception("Operation timed out"));
                 $stream->close();
             });
