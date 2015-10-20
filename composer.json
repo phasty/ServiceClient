@@ -1,22 +1,14 @@
 {
-    "name" : "ihypermarket",
-    "description" : "",
-    "repositories": [
-        {
-            "type" : "vcs",
-            "url"  : "git@gitlab.prp.ru:exchange/replicatorclient.git"
-        }
-    ],
-    "require" : {
-        "replicatorclient" : "@dev",
+    "name" : "phasty/serviceclient",
+    "description" : "Service Client",
+    "require": {
         "react/promise" : "2.2.1",
         "phasty/stream" : "0.1.*@dev",
-        "phasty/server"  : "0.1.*@dev",
-        "smarty/smarty": "3.1.19"
+        "phasty/server"  : "0.1.*@dev"
     },
     "autoload" : {
         "psr-4": {
-            ""         : "library/"
+            "Phasty\\ServiceClient\\" : "src"
         }
     },
     "minimum-stability" : "dev"
