@@ -30,7 +30,7 @@ namespace Phasty\ServiceClient {
             });
 
             $response->on("error", function($event) use($deferred) {
-                $deferred->reject($event->getBody());
+                $deferred->reject($event->getData());
             });
 
             $streamSet = \Phasty\Stream\StreamSet::instance();
