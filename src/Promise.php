@@ -25,7 +25,15 @@ namespace Phasty\ServiceClient {
             $response->setReadStream($stream);
 
             $response->on("read-complete", function($event, $response) use($deferred) {
+                set_error_handler(function() {});
                 $body = json_decode($response->getBody(), true);
+                restore_error_handler();
+
+                if (is_null($body)) {
+                    $deferred->reject(new \Exception("Service response is not json:\n " . $response->getBody()));
+                    return;
+                }
+
                 if ($response->getCode() > 299) {
                     $deferred->reject(new \Exception($body[ "message" ], $response->getCode()));
                     return;

@@ -3,7 +3,7 @@ namespace Phasty\ServiceClient {
     use \Phasty\Stream\StreamSet;
     use \Phasty\Stream\Stream;
 
-    class Client {
+    abstract class Client {
         protected function encodeArguments($arguments) {
             return json_encode($arguments);
         }
@@ -60,7 +60,7 @@ namespace Phasty\ServiceClient {
         }
 
         protected function getServiceUri() {
-            throw new Exception("Service URI not configured");
+            throw new \Exception("Service URI not configured");
         }
     }
 }
