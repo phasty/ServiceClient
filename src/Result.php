@@ -7,7 +7,7 @@ namespace Phasty\ServiceClient {
         protected $promise = null;
         protected $future  = null;
 
-        public function __construct(Stream $stream) {
+        public function __construct($stream) {
             $this->stream = $stream;
         }
 

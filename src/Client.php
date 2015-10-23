@@ -8,21 +8,21 @@ namespace Phasty\ServiceClient {
             return json_encode($arguments);
         }
 
-        private function getPortString($uriInfo) {
-            return !empty($uriInfo["port"]) ? ":" . $uriInfo["port"] : "";
+        private function getPort($uriInfo) {
+            return ":" . (empty($uriInfo["port"]) ? 80 : $uriInfo["port"]);
         }
 
         private function getRequest($data) {
             return
-                "GET " . $data[ "path" ] . "\n" .
-                "HOST: " . $data[ "host" ] . $this->getPortString($data) . "\n" .
+                "GET " . $data[ "path" ] . " HTTP/1.0\n" .
+                "HOST: " . $data[ "host" ] . $this->getPort($data) . "\n" .
                 "Content-Type: application/json\n" .
                 "Content-Length: " . strlen($data[ "body" ]) . "\n\n" .
                 $data[ "body" ];
         }
 
         private function getSocket($uriInfo) {
-            $socket = stream_socket_client("tcp://" . $uriInfo[ "host" ] . $this->getPortString($uriInfo), $errno, $errstr, 1, STREAM_CLIENT_ASYNC_CONNECT);//STREAM_CLIENT_PERSISTENT
+            $socket = stream_socket_client("tcp://" . $uriInfo[ "host" ] . $this->getPort($uriInfo), $errno, $errstr, 1, STREAM_CLIENT_ASYNC_CONNECT);//STREAM_CLIENT_PERSISTENT
 
             stream_set_blocking($socket, 1);
             return $socket;
@@ -42,13 +42,15 @@ namespace Phasty\ServiceClient {
                 $socket  = $this->getSocket($parsedUri);
 
                 fwrite($socket, $request);
+
+                restore_error_handler();
             } catch (\Exception $e) {
+                restore_error_handler();
                 if (!empty($socket)) {
                     fclose($socket);
                 }
-                return $e;
+                return new Result($e);
             }
-            restore_error_handler();
 
             return new Result(new Stream($socket));
         }

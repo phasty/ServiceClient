@@ -9,7 +9,11 @@ namespace Phasty\ServiceClient {
         static public function create($stream) {
             $deferred = new Deferred();
             if (!$stream instanceof Stream) {
-                $deferred->reject($stream);
+                if ($stream instanceof \Exception) {
+                    $deferred->reject($stream);
+                } else {
+                    $deferred->resolve($stream);
+                }
             } else {
                 self::setListenersToStream($stream, $deferred);
             }
@@ -23,14 +27,14 @@ namespace Phasty\ServiceClient {
             $response->on("read-complete", function($event, $response) use($deferred) {
                 $body = json_decode($response->getBody(), true);
                 if ($response->getCode() > 299) {
-                    $deferred->reject($body[ "message" ]);
+                    $deferred->reject(new \Exception($body[ "message" ], $response->getCode()));
                     return;
                 }
                 $deferred->resolve($body[ "result" ]);
             });
 
             $response->on("error", function($event) use($deferred) {
-                $deferred->reject($event->getData());
+                $deferred->reject(new \Exception($event->getData()));
             });
 
             $streamSet = \Phasty\Stream\StreamSet::instance();

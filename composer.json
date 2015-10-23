@@ -4,7 +4,7 @@
     "require": {
         "react/promise" : "2.2.1",
         "phasty/stream" : "0.1.*@dev",
-        "phasty/server"  : "0.1.*@dev"
+        "phasty/server"  : "0.1.1"
     },
     "autoload" : {
         "psr-4": {

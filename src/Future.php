@@ -35,7 +35,7 @@ namespace Phasty\ServiceClient {
          *
          * @param mixed $value Ответ асинхронной операции либо исключение
          */
-        protected function resolveWith($value) {
+        public function resolveWith($value) {
             $this->value = $value;
             $this->resolved = true;
             if ($value instanceof \Exception) {
