@@ -55,12 +55,16 @@ namespace Phasty\ServiceClient {
             return new Result(new Stream($socket));
         }
 
-        public function waitAllServices() {
+        public static function waitAllServices() {
             \Phasty\Stream\StreamSet::instance()->listen();
         }
 
         protected function getServiceUri() {
             throw new \Exception("Service URI not configured");
+        }
+
+        public static function isWaitingForServices() {
+            return \Phasty\Stream\StreamSet::instance()->getReadStreamsCount() > 0;
         }
     }
 }
