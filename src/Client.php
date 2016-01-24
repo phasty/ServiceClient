@@ -4,6 +4,17 @@ namespace Phasty\ServiceClient {
     use \Phasty\Stream\Stream;
 
     abstract class Client {
+
+        private function __construct() {}
+
+        public static function instance() {
+            static $instance = null;
+            if (!isset($instance)) {
+                $instance = new static;
+            }
+            return $instance;
+        }
+
         protected function encodeArguments($arguments) {
             return json_encode($arguments);
         }
