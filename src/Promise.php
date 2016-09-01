@@ -6,7 +6,7 @@ namespace Phasty\ServiceClient {
     use \Phasty\Stream\Timer;
 
     class Promise {
-        static public function create($stream, $onResolve) {
+        public static function create($stream, $onResolve) {
             $deferred = new Deferred();
             if (!$stream instanceof Stream) {
                 self::resolveWith($deferred, $stream, $onResolve);
@@ -18,6 +18,7 @@ namespace Phasty\ServiceClient {
 
         /**
          * Устанавливает зарезолвленное значение. Если значение является исключением
+         * результат промиса принимает состояние rejected.
          *
          * @param Deferred $deferred
          * @param mixed    $result     Ответ асинхронной операции либо исключение
@@ -39,24 +40,19 @@ namespace Phasty\ServiceClient {
             }
         }
 
+        /**
+         * Устанавливает обработчики событий для сокетов
+         *
+         * @param Stream   $stream
+         * @param Deferred $deferred
+         * @param callable $onResolve
+         */
         protected static function setListenersToStream(Stream $stream, $deferred, $onResolve) {
             $response = new \Phasty\Server\Http\Response();
             $response->setReadStream($stream);
 
             $response->on("read-complete", function($event, $response) use($deferred, $onResolve) {
-                set_error_handler(function() {});
-                $body = json_decode($response->getBody(), true);
-                restore_error_handler();
-
-                if (is_null($body)) {
-                    $result = new \Exception("Service response is not json:\n " . $response->getBody());
-                } elseif ($response->getCode() > 299) {
-                    $result = new \Exception($body[ "message" ], $response->getCode());
-                } else {
-                    $result = $body[ "result" ];
-
-                }
-
+                $result = Result::processResponse($response);
                 Promise::resolveWith($deferred, $result, $onResolve);
             });
 

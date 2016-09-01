@@ -21,7 +21,7 @@ namespace Phasty\ServiceClient {
          *
          * @return Future
          */
-        static public function create($stream, $onResolve) {
+        public static function create($stream, $onResolve) {
             return new static($stream, $onResolve);
         }
 
@@ -43,10 +43,11 @@ namespace Phasty\ServiceClient {
 
         /**
          * Устанавливает зарезолвленное значение. Если значение является исключением
+         * результат запроса принимает состояние rejected.
          *
          * @param mixed $value Ответ асинхронной операции либо исключение
          */
-        public function resolveWith($value) {
+        protected function resolveWith($value) {
             if (is_callable($this->onResolve) && !($value instanceof \Exception)) {
                 try {
                     $value = call_user_func($this->onResolve, $value);
@@ -83,24 +84,13 @@ namespace Phasty\ServiceClient {
          */
         public function resolve() {
             if (!$this->resolved) {
-                $value = null;
+                $result = null;
                 try {
-
                     $response = new \Phasty\Server\Http\Response();
                     $response->setReadStream($this->socket);
 
-                    $response->on("read-complete", function ($event, $response) use (&$value) {
-                        set_error_handler(function() {});
-                        $body = json_decode($response->getBody(), true);
-                        restore_error_handler();
-
-                        if (is_null($body)) {
-                            throw new \Exception("Service response is not json:\n " . $response->getBody());
-                        } elseif ($response->getCode() > 299) {
-                           throw new \Exception($body[ "message" ], $response->getCode());
-                        } else {
-                            $value = $body[ "result" ];
-                        }
+                    $response->on("read-complete", function ($event, $response) use (&$result) {
+                        $result = Result::processResponse($response);
                     });
 
                     $response->on("error", function ($event) {
@@ -122,20 +112,11 @@ namespace Phasty\ServiceClient {
 
                     $streamSet->listen();
                 } catch (\Exception $e) {
-                    $value = $e;
+                    $result = $e;
                 }
-                $this->resolveWith($value);
+                $this->resolveWith($result);
             }
             return $this->value;
-        }
-
-        /**
-         * Произошла ли ошибка при резолвинге
-         *
-         * @return bool Была ошибка в процессе выполнения или нет
-         */
-        public function isRejected() {
-            return $this->rejected;
         }
     }
 }

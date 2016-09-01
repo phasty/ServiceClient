@@ -5,10 +5,10 @@ namespace Phasty\ServiceClient {
     class Result {
         const OPERATION_TIMEOUT_MICROSECONDS = 3000000;
         const OPERATION_TIMEOUT_SECONDS      = 20;
-        protected $stream  = null;
-        protected $promise = null;
-        protected $future  = null;
-        protected $onResolve;
+        protected $stream    = null;
+        protected $promise   = null;
+        protected $future    = null;
+        protected $onResolve = null;
 
         public function __construct($stream) {
             $this->stream = $stream;
@@ -32,6 +32,27 @@ namespace Phasty\ServiceClient {
             return $this;
         }
 
+        /**
+         * Обрабатыват результат запроса с сервиса.
+         *
+         * @param \Phasty\Server\Http\Response $response
+         *
+         * @return mixed $result Результат выполнения
+         */
+        public static function processResponse($response) {
+            set_error_handler(function() {});
+            $body = json_decode($response->getBody(), true);
+            restore_error_handler();
+
+            if (is_null($body)) {
+                $result = new \Exception("Service response is not json:\n " . $response->getBody());
+            } elseif ($response->getCode() > 299) {
+                $result = new \Exception($body[ "message" ], $response->getCode());
+            } else {
+                $result = $body[ "result" ];
+            }
+            return $result;
+        }
         /**
          * Порождает объект класса React\Promise.
          *
@@ -75,8 +96,8 @@ namespace Phasty\ServiceClient {
         public function sync() {
             $future = $this->future();
             $result = $future->resolve();
-            if ($future->isRejected()) {
-                throw new \Exception($result);
+            if ($result instanceof \Exception) {
+                throw $result;
             }
             return $result;
         }
