@@ -87,11 +87,11 @@ namespace Phasty\ServiceClient {
         }
 
         /**
-         * Выполняет синхронный запрос с ипользованием объекта Future
+         * Выполняет синхронный запрос с использованием объекта Future
          *
          * @return mixed Результат операции
          *
-         * @throws \Exception  если результатом запроса уже является Promise
+         * @throws \Exception  если результатом запроса уже является Promise либо если resolve вернул \Exception
          */
         public function sync() {
             $future = $this->future();
