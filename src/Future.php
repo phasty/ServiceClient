@@ -8,8 +8,6 @@ namespace Phasty\ServiceClient {
         protected $value     = null;
         protected $socket    = null;
         protected $resolved  = false;
-        protected $data      = "";
-        protected $streamSet = null;
         protected $onResolve = null;
 
         /**
@@ -56,19 +54,6 @@ namespace Phasty\ServiceClient {
 
             $this->value = $value;
             $this->resolved = true;
-        }
-
-        /**
-         * Устанавливает слушателей на сокет
-         */
-        protected function setListeners() {
-            $this->socket->on("data", function($data)  {
-                $this->data .= $data->getData();
-            });
-
-            $this->socket->on("close", function() {
-                $this->streamSet->stop();
-            });
         }
 
         /**
