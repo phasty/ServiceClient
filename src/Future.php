@@ -11,7 +11,7 @@ namespace Phasty\ServiceClient {
         protected $rejected  = false;
         protected $data      = "";
         protected $streamSet = null;
-        protected $onResolve;
+        protected $onResolve = null;
 
         /**
          * Метод-фабрика для конструктора
