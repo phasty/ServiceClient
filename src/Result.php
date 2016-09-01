@@ -70,7 +70,7 @@ namespace Phasty\ServiceClient {
             return $this->promise = Promise::create($this->stream, $this->onResolve);
         }
         /**
-         * Порождает объект класса React\Promise.
+         * Порождает объект класса Future.
          *
          * @return Future  Возвращает Future
          *
