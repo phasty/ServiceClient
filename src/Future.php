@@ -6,7 +6,7 @@ namespace Phasty\ServiceClient {
 
     class Future {
         protected $value     = null;
-        protected $socket    = null;
+        protected $stream    = null;
         protected $resolved  = false;
         protected $onResolve = null;
 
@@ -35,7 +35,7 @@ namespace Phasty\ServiceClient {
                 $this->resolveWith($stream);
                 return;
             }
-            $this->socket = $stream;
+            $this->stream = $stream;
         }
 
         /**
@@ -66,7 +66,7 @@ namespace Phasty\ServiceClient {
                 $result = null;
                 try {
                     $response = new \Phasty\Server\Http\Response();
-                    $response->setReadStream($this->socket);
+                    $response->setReadStream($this->stream);
 
                     $response->on("read-complete", function ($event, $response) use (&$result) {
                         $result = Result::processResponse($response);
@@ -80,13 +80,13 @@ namespace Phasty\ServiceClient {
                         Result::OPERATION_TIMEOUT_SECONDS,
                         Result::OPERATION_TIMEOUT_MICROSECONDS,
                         function() {
-                            $this->socket->close();
+                            $this->stream->close();
                             throw new \Exception("Operation timed out");
                         }
                     );
 
                     $streamSet = new StreamSet();
-                    $streamSet->addReadStream($this->socket);
+                    $streamSet->addReadStream($this->stream);
                     $streamSet->addTimer($timer);
 
                     $streamSet->listen();
