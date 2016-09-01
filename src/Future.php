@@ -8,7 +8,6 @@ namespace Phasty\ServiceClient {
         protected $value     = null;
         protected $socket    = null;
         protected $resolved  = false;
-        protected $rejected  = false;
         protected $data      = "";
         protected $streamSet = null;
         protected $onResolve = null;
@@ -42,8 +41,7 @@ namespace Phasty\ServiceClient {
         }
 
         /**
-         * Устанавливает зарезолвленное значение. Если значение является исключением
-         * результат запроса принимает состояние rejected.
+         * Устанавливает зарезолвленное значение, которое может являться исключением
          *
          * @param mixed $value Ответ асинхронной операции либо исключение
          */
@@ -54,10 +52,6 @@ namespace Phasty\ServiceClient {
                 } catch (\Exception $e) {
                     $value = $e;
                 }
-            }
-
-            if ($value instanceof \Exception) {
-                $this->rejected = true;
             }
 
             $this->value = $value;
