@@ -6,106 +6,96 @@ namespace Phasty\ServiceClient {
 
     class Future {
         protected $value     = null;
-        protected $socket    = null;
+        protected $stream    = null;
         protected $resolved  = false;
-        protected $rejected  = false;
-        protected $data      = "";
-        protected $streamSet = null;
+        protected $onResolve = null;
 
         /**
          * Метод-фабрика для конструктора
+         *
+         * @param Stream   $stream       поток для чтения ответа
+         * @param callable $onResolve   callback функция для обработки результата операции
+         *
+         * @return Future
          */
-        static public function create($stream) {
-            return new static($stream);
+        public static function create($stream, $onResolve) {
+            return new static($stream, $onResolve);
         }
 
         /**
-         * Конструктор. Принимает зарезолвленный результат, либо стрим, из которого его нужно получить
+         * Конструктор. Принимает зарезолвленный результат, либо стрим, из которого его нужно получить.
+         * Конструктор закрыт - работаем с фабриками!
+         *
+         * @param Stream        $stream
+         * @param null|callable $onResolve  функция-обработчик результата
          */
-        public function __construct($stream) {
+        protected function __construct($stream, $onResolve) {
+            $this->onResolve = $onResolve;
             if (!$stream instanceof Stream) {
                 $this->resolveWith($stream);
                 return;
             }
-            $this->socket = $stream;
+            $this->stream = $stream;
         }
 
         /**
-         * Устанавливает зарезолвленное значение
+         * Устанавливает зарезолвленное значение, которое может являться исключением
          *
          * @param mixed $value Ответ асинхронной операции либо исключение
          */
-        public function resolveWith($value) {
+        protected function resolveWith($value) {
+            if (is_callable($this->onResolve) && !($value instanceof \Exception)) {
+                try {
+                    $value = call_user_func($this->onResolve, $value);
+                } catch (\Exception $e) {
+                    $value = $e;
+                }
+            }
+
             $this->value = $value;
             $this->resolved = true;
-            if ($value instanceof \Exception) {
-                $this->rejected = true;
-                $this->value = $value->getMessage();
-            } else {
-                $this->value = $value;
-            }
-        }
-
-        /**
-         * Устанавливает слушателей на сокет
-         */
-        protected function setListeners() {
-            $this->socket->on("data", function($data)  {
-                $this->data .= $data->getData();
-            });
-
-            $this->socket->on("close", function() {
-                $this->streamSet->stop();
-            });
         }
 
         /**
          * Если результат выполнения операции уже известен, возвращает его, иначе блокируется до получения ответа
+         *
+         * @return mixed Результат выполнения Future
          */
         public function resolve() {
-            if ($this->resolved) {
-                return $this->value;
+            if (!$this->resolved) {
+                $result = null;
+                try {
+                    $response = new \Phasty\Server\Http\Response();
+                    $response->setReadStream($this->stream);
+
+                    $response->on("read-complete", function ($event, $response) use (&$result) {
+                        $result = Result::processResponse($response);
+                    });
+
+                    $response->on("error", function ($event) {
+                        throw new \Exception($event->getBody());
+                    });
+
+                    $timer = new Timer(
+                        Result::OPERATION_TIMEOUT_SECONDS,
+                        Result::OPERATION_TIMEOUT_MICROSECONDS,
+                        function() {
+                            $this->stream->close();
+                            throw new \Exception("Operation timed out");
+                        }
+                    );
+
+                    $streamSet = new StreamSet();
+                    $streamSet->addReadStream($this->stream);
+                    $streamSet->addTimer($timer);
+
+                    $streamSet->listen();
+                } catch (\Exception $e) {
+                    $result = $e;
+                }
+                $this->resolveWith($result);
             }
-            $value = null;
-            try {
-
-                $response = new \Phasty\Server\Http\Response();
-                $response->setReadStream($this->socket);
-
-                $response->on("read-complete", function($event, $response) use(&$value) {
-                    $body = json_decode($response->getBody(), true);
-                    if ($response->getCode() > 299) {
-                        throw new \Exception($body[ "message" ]);
-                    }
-                    $value = $body[ "result" ];
-                });
-
-                $response->on("error", function($event) {
-                    throw new \Exception($event->getBody());
-                });
-
-                $timer = new Timer(10, 3000000, function() {
-                    $this->socket->close();
-                    throw new \Exception("Operation timed out");
-                });
-
-                $streamSet = new \Phasty\Stream\StreamSet();
-                $streamSet->addReadStream($this->socket);
-                $streamSet->addTimer($timer);
-
-                $streamSet->listen();
-            } catch (\Exception $e) {
-                $value = $e;
-            }
-            $this->resolveWith($value);
             return $this->value;
-        }
-
-        /**
-         * Произошла ли ошибка при резолвинге
-         */
-        public function isRejected() {
-            return $this->rejected;
         }
     }
 }
