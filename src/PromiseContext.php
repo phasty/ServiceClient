@@ -90,7 +90,7 @@ namespace Phasty\ServiceClient {
          * @throws \Exception
          */
         public static function call($callable, $arguments = []) {
-            $result = $error = $functionResult = $resolved = false;
+            $result = $error = $resolved = false;
             static::push();
             try {
                 $functionResult = call_user_func_array($callable, $arguments);
