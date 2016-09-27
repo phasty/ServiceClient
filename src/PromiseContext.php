@@ -78,7 +78,7 @@ namespace Phasty\ServiceClient {
             static::setActive($context);
         }
 
-        protected static function wait() {
+        protected static function listen() {
             $activeStreamSet = static::getActiveStreamSet();
             if (!is_null($activeStreamSet) && $activeStreamSet->getReadStreamsCount() > 0) {
                 $activeStreamSet->listen();
@@ -92,7 +92,7 @@ namespace Phasty\ServiceClient {
          * @return mixed
          * @throws \Exception
          */
-        public static function call($callable, $arguments = []) {
+        public static function wait($callable, $arguments = []) {
             $result = $error = $resolved = false;
             static::push();
             try {
@@ -114,7 +114,7 @@ namespace Phasty\ServiceClient {
                     $result   = $functionResult;
                     $resolved = true;
                 }
-                static::wait();
+                static::listen();
                 if (!$resolved) {
                     $error = new \Exception("Out of context call");
                 }
