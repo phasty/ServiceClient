@@ -66,6 +66,9 @@ namespace Phasty\ServiceClient {
             static::setActive($context);
         }
 
+        /**
+         * @throws \Exception
+         */
         protected static function pop() {
             $activeContext = static::getActive();
             if (is_null($activeContext)) {
