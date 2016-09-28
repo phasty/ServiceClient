@@ -72,9 +72,12 @@ namespace Phasty\ServiceClient {
         protected static function pop() {
             $activeContext = static::getActive();
             if (is_null($activeContext)) {
-                throw new \Exception("No parent context");
+                throw new \Exception("No active context");
             }
             $context = $activeContext->getParent();
+            if (is_null($context)) {
+                throw new \Exception("No parent context");
+            }
             static::setActive($context);
         }
 
