@@ -60,7 +60,12 @@ namespace Phasty\ServiceClient {
                 $deferred->reject(new \Exception($event->getData()));
             });
 
-            $streamSet = StreamSet::instance();
+            $streamSet = PromiseContext::getActiveStreamSet();
+            if (is_null($streamSet)) {
+                $deferred->reject(new \Exception("No promise context"));
+                $stream->close();
+                return;
+            }
             $streamSet->addReadStream($stream);
 
             $timer = new Timer(
