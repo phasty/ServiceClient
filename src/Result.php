@@ -49,15 +49,15 @@ namespace Phasty\ServiceClient {
                 $result = new Exception\InternalServerError("Service response is not json:\n " . $response->getBody(), 0);
             } elseif ($response->getCode() != 200) {
                 // Если код ошибки не пришел или он нулевой - это неклассифицированная ошибка!
-                // Занчит формат ответа в любом случае не соответсвует API
+                // Занчит формат ответа в любом случае не соответствует API
                 if (empty($body[ "code" ]) || (int) $body[ "code" ] == 0) {
                     $httpStatus = 500;
                     $body[ "code" ] = 0;
                 } else {
                     $httpStatus = $response->getCode();
                 }
-                $error = getErrorType($httpStatus);
-                $result = new $error($body[ "message" ], $body[ "code" ]);
+                $errorType = getErrorType($httpStatus);
+                $result = new $errorType($body[ "message" ], $body[ "code" ]);
             } else {
                 $result = $body[ "result" ];
             }
@@ -80,6 +80,7 @@ namespace Phasty\ServiceClient {
             }
             return $this->promise = Promise::create($this->stream, $this->onResolve);
         }
+
         /**
          * Порождает объект класса Future.
          *
@@ -116,9 +117,9 @@ namespace Phasty\ServiceClient {
         /**
          * Возвращает класс исключения, который нужно выбросить для данного http-ответа
          *
-         * @param  int $httpCode [description]
+         * @param  int $httpCode  HTTP-Код ответа
          *
-         * @return string           Возвращает тип исключения
+         * @return string  Возвращает тип исключения
          */
         protected function getErrorType($httpCode) {
             static $mapper = [

@@ -23,7 +23,7 @@ namespace Phasty\ServiceClient {
             return ":" . (empty($uriInfo["port"]) ? 80 : $uriInfo["port"]);
         }
 
-        private function sendRequest($data) {
+        private function buildRequest($data) {
             return
                 "POST " . $data[ "path" ] . " HTTP/1.0\n" .
                 "HOST: " . $data[ "host" ] . $this->getPort($data) . "\n" .
@@ -49,7 +49,7 @@ namespace Phasty\ServiceClient {
 
             try {
                 $body    = $this->encodeArguments($arguments);
-                $request = $this->sendRequest($parsedUri + compact("body"));
+                $request = $this->buildRequest($parsedUri + compact("body"));
                 $socket  = $this->getSocket($parsedUri);
 
                 fwrite($socket, $request);
