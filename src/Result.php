@@ -43,21 +43,19 @@ namespace Phasty\ServiceClient {
         public static function processResponse($response) {
             set_error_handler(function() {});
             $body = json_decode($response->getBody(), true);
+            $httpStatus = $response->getCode()
             restore_error_handler();
 
             if (is_null($body)) {
-                $result = new Exception\InternalServerError("Service response is not json:\n " . $response->getBody(), 0);
-            } elseif ($response->getCode() != 200) {
+                $result = new Exception\InternalError("Service response is not json:\n " . $response->getBody(), Error::INTERNAL_ERROR);
+            } elseif ($httpStatus != 200) {
                 // Если код ошибки не пришел или он нулевой - это неклассифицированная ошибка!
                 // Занчит формат ответа в любом случае не соответствует API
                 if (empty($body[ "code" ]) || (int) $body[ "code" ] == 0) {
-                    $httpStatus = 500;
-                    $body[ "code" ] = 0;
-                } else {
-                    $httpStatus = $response->getCode();
+                    $body[ "code" ] = Error::INTERNAL_ERROR;
                 }
-                $errorType = getErrorType($httpStatus);
-                $result = new $errorType($body[ "message" ], $body[ "code" ]);
+                $errorType = ($httpStatus == 400 && $body[ "code" ] != Error::INTERNAL_ERROR) ? "ServiceError" : "InternalError";
+                $result = new $errorType("", $body[ "code" ]);
             } else {
                 $result = $body[ "result" ];
             }
@@ -114,25 +112,5 @@ namespace Phasty\ServiceClient {
             return $result;
         }
 
-        /**
-         * Возвращает класс исключения, который нужно выбросить для данного http-ответа
-         *
-         * @param  int $httpCode  HTTP-Код ответа
-         *
-         * @return string  Возвращает тип исключения
-         */
-        protected function getErrorType($httpCode) {
-            static $mapper = [
-                400 => "BadRequest",
-                401 => "Unauthorized",
-                403 => "Forbidden",
-                404 => "NotFound",
-                409 => "Conflict",
-                422 => "UnprocessableEntity",
-                500 => "InternalServerError",
-                501 => "NotImplemented"
-            ];
-            return empty($mapper[$httpCode]) ? "InternalServerError" : $mapper[$httpCode];
-        }
     }
 }
