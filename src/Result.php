@@ -43,19 +43,13 @@ namespace Phasty\ServiceClient {
         public static function processResponse($response) {
             set_error_handler(function() {});
             $body = json_decode($response->getBody(), true);
-            $httpStatus = $response->getCode()
             restore_error_handler();
+            $httpStatus = $response->getCode();
 
             if (is_null($body)) {
                 $result = new Exception\InternalError("Service response is not json:\n " . $response->getBody(), Error::INTERNAL_ERROR);
             } elseif ($httpStatus != 200) {
-                // Если код ошибки не пришел или он нулевой - это неклассифицированная ошибка!
-                // Занчит формат ответа в любом случае не соответствует API
-                if (empty($body[ "code" ]) || (int) $body[ "code" ] == 0) {
-                    $body[ "code" ] = Error::INTERNAL_ERROR;
-                }
-                $errorType = ($httpStatus == 400 && $body[ "code" ] != Error::INTERNAL_ERROR) ? "ServiceError" : "InternalError";
-                $result = new $errorType("", $body[ "code" ]);
+                $result = $this->getError($httpStatus, $body)
             } else {
                 $result = $body[ "result" ];
             }
@@ -110,6 +104,24 @@ namespace Phasty\ServiceClient {
                 throw $result;
             }
             return $result;
+        }
+
+        /**
+         * Возвращает исключение в завсисимости от статуса и ошибки сервиса
+         *
+         * @param  int   $status  Код http-статуса ответа сервиса
+         * @param  array $error   Тело ошибки. Должно содержать код и текст сообщения
+         *
+         * @return Error  Исключение
+         */
+        protected function getError($status, $error) {
+            // Если код ошибки не пришел или он нулевой - это неклассифицированная ошибка!
+            // Занчит формат ответа в любом случае не соответствует API
+            $code = (empty($error[ "code" ]) || (int) $error[ "code" ] == 0) ? Error::INTERNAL_ERROR : (int) $error[ "code" ];
+            $message = empty($error[ "message" ]) ? "" : $error[ "message" ];
+
+            $errorType = "Exception\\" . ($status == 400 && $code != Error::INTERNAL_ERROR) ? "ServiceError" : "InternalError";
+            return new $errorType($message, $code);
         }
 
     }

@@ -7,6 +7,8 @@ namespace Phasty\ServiceClient\Exception {
      * Исключение выбрасываемое в случае если на сервисе произошла обработанная логическая ошибка.
      * Например: не найден пользователь, нет прав, невалидные данные в запросе.
      *
+     * Исключение должно быть сгенерировано с кодом!
+     *
      * @package Phasty\ServiceClient\Exception
      */
     class ServiceError extends Phasty\ServiceClient\Error {
