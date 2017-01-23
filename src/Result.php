@@ -109,18 +109,18 @@ namespace Phasty\ServiceClient {
         /**
          * Возвращает исключение в завсисимости от статуса и ошибки сервиса
          *
-         * @param  int   $status  Код http-статуса ответа сервиса
-         * @param  array $error   Тело ошибки. Должно содержать код и текст сообщения
+         * @param  int   $httpStatus  Код http-статуса ответа сервиса
+         * @param  array $error       Тело ошибки. Должно содержать код и текст сообщения
          *
          * @return Error  Исключение
          */
-        protected function getError($status, $error) {
+        protected function getError($httpStatus, $error) {
             // Если код ошибки не пришел или он нулевой - это неклассифицированная ошибка!
-            // Занчит формат ответа в любом случае не соответствует API
+            // Значит формат ответа в любом случае не соответствует API
             $code = (empty($error[ "code" ]) || (int) $error[ "code" ] == 0) ? Error::INTERNAL_ERROR : (int) $error[ "code" ];
             $message = empty($error[ "message" ]) ? "" : $error[ "message" ];
 
-            $errorType = "Exception\\" . ($status == 400 && $code != Error::INTERNAL_ERROR) ? "ServiceError" : "InternalError";
+            $errorType = ($httpStatus == 400 && $code != Error::INTERNAL_ERROR) ? Exception\ServiceError::class : Exception\InternalError::class;
             return new $errorType($message, $code);
         }
 

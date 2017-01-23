@@ -2,9 +2,10 @@
 namespace Phasty\ServiceClient {
 
     /**
-     * Class InternalError
+     * Class Error
      * HTTP Status: 500
      * Исключение выбрасываемое в случае возникновения технической ошибки на стороне сервера.
+     * Общий класс, для того чтобы в коде было легко отделить ошибки сервиса от прочих исключений.
      *
      * @package Phasty\ServiceClient
      */
