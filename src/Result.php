@@ -47,7 +47,7 @@ namespace Phasty\ServiceClient {
             $httpStatus = $response->getCode();
 
             if (is_null($body)) {
-                $result = new Exception\InternalError("Service response is not json:\n " . $response->getBody(), Error::INTERNAL_ERROR);
+                $result = new Exception\InternalServerError("Service response is not json:\n " . $response->getBody(), Error::INTERNAL_SERVER_ERROR);
             } elseif ($httpStatus != 200) {
                 $result = $this->getError($httpStatus, $body)
             } else {
@@ -117,10 +117,10 @@ namespace Phasty\ServiceClient {
         protected function getError($httpStatus, $error) {
             // Если код ошибки не пришел или он нулевой - это неклассифицированная ошибка!
             // Значит формат ответа в любом случае не соответствует API
-            $code = (empty($error[ "code" ]) || (int) $error[ "code" ] == 0) ? Error::INTERNAL_ERROR : (int) $error[ "code" ];
+            $code = (empty($error[ "code" ]) || (int) $error[ "code" ] == 0) ? Error::INTERNAL_SERVER_ERROR : (int) $error[ "code" ];
             $message = empty($error[ "message" ]) ? "" : $error[ "message" ];
 
-            $errorType = ($httpStatus == 400 && $code != Error::INTERNAL_ERROR) ? Exception\ServiceError::class : Exception\InternalError::class;
+            $errorType = ($httpStatus == 400 && $code != Error::INTERNAL_SERVER_ERROR) ? Exception\ServiceError::class : Exception\InternalServerError::class;
             return new $errorType($message, $code);
         }
 
