@@ -1,5 +1,6 @@
 <?php
 namespace Phasty\ServiceClient {
+
     use \Phasty\Stream\StreamSet;
     use \Phasty\Stream\Stream;
 
@@ -23,9 +24,9 @@ namespace Phasty\ServiceClient {
             return ":" . (empty($uriInfo["port"]) ? 80 : $uriInfo["port"]);
         }
 
-        private function getRequest($data) {
+        private function buildRequest($data) {
             return
-                "GET " . $data[ "path" ] . " HTTP/1.0\n" .
+                "POST " . $data[ "path" ] . " HTTP/1.0\n" .
                 "HOST: " . $data[ "host" ] . $this->getPort($data) . "\n" .
                 "Content-Type: application/json\n" .
                 "Content-Length: " . strlen($data[ "body" ]) . "\n\n" .
@@ -39,7 +40,7 @@ namespace Phasty\ServiceClient {
             return $socket;
         }
 
-        public function get($uri, $arguments) {
+        public function post($uri, $arguments) {
             $fullUri   = $this->getServiceUri() . $uri;
             $parsedUri = parse_url($fullUri);
 
@@ -49,7 +50,7 @@ namespace Phasty\ServiceClient {
 
             try {
                 $body    = $this->encodeArguments($arguments);
-                $request = $this->getRequest($parsedUri + compact("body"));
+                $request = $this->buildRequest($parsedUri + compact("body"));
                 $socket  = $this->getSocket($parsedUri);
 
                 fwrite($socket, $request);

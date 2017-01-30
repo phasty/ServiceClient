@@ -1,6 +1,9 @@
 <?php
 namespace Phasty\ServiceClient {
+
     use \Phasty\Stream\Stream;
+    use \Phasty\ServiceClient\Exception\InternalServerError;
+    use \Phasty\ServiceClient\Exception\RequestError;
 
     class Result {
         const OPERATION_TIMEOUT_MICROSECONDS = 3000000;
@@ -43,16 +46,21 @@ namespace Phasty\ServiceClient {
             set_error_handler(function() {});
             $body = json_decode($response->getBody(), true);
             restore_error_handler();
+            $httpStatus = $response->getCode();
 
             if (is_null($body)) {
-                $result = new \Exception("Service response is not json:\n " . $response->getBody());
-            } elseif ($response->getCode() > 299) {
-                $result = new \Exception($body[ "message" ], $response->getCode());
+                $result = new InternalServerError(
+                    "Service response is not json:\n " . $response->getBody(),
+                    Error::INTERNAL_SERVER_ERROR
+                );
+            } elseif ($httpStatus != 200) {
+                $result = static::getError($httpStatus, $body);
             } else {
                 $result = $body[ "result" ];
             }
             return $result;
         }
+
         /**
          * Порождает объект класса React\Promise.
          *
@@ -69,6 +77,7 @@ namespace Phasty\ServiceClient {
             }
             return $this->promise = Promise::create($this->stream, $this->onResolve);
         }
+
         /**
          * Порождает объект класса Future.
          *
@@ -101,5 +110,26 @@ namespace Phasty\ServiceClient {
             }
             return $result;
         }
+
+        /**
+         * Возвращает исключение в завсисимости от статуса и ошибки сервиса
+         *
+         * @param  int   $httpStatus  Код http-статуса ответа сервиса
+         * @param  array $error       Тело ошибки. Должно содержать код и текст сообщения
+         *
+         * @return Error  Исключение
+         */
+        protected static function getError($httpStatus, $error) {
+            // Если код ошибки не пришел или он нулевой - это неклассифицированная ошибка!
+            // Значит формат ответа в любом случае не соответствует API
+            $code = (empty($error[ "code" ]) || (int) $error[ "code" ] == 0) ?
+                Error::INTERNAL_SERVER_ERROR : (int) $error[ "code" ];
+            $message = empty($error[ "message" ]) ? "" : $error[ "message" ];
+
+            $errorType = ($httpStatus == 400 && $code != Error::INTERNAL_SERVER_ERROR) ?
+                RequestError::class : InternalServerError::class;
+            return new $errorType($message, $code);
+        }
+
     }
 }
