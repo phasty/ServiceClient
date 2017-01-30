@@ -1,5 +1,6 @@
 <?php
 namespace Phasty\ServiceClient {
+
     use \Phasty\Stream\StreamSet;
     use \Phasty\Stream\Stream;
 

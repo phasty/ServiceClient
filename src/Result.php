@@ -1,5 +1,6 @@
 <?php
 namespace Phasty\ServiceClient {
+
     use \Phasty\Stream\Stream;
     use \Phasty\ServiceClient\Exception;
 
@@ -47,9 +48,12 @@ namespace Phasty\ServiceClient {
             $httpStatus = $response->getCode();
 
             if (is_null($body)) {
-                $result = new Exception\InternalServerError("Service response is not json:\n " . $response->getBody(), Error::INTERNAL_SERVER_ERROR);
+                $result = new Exception\InternalServerError(
+                    "Service response is not json:\n " . $response->getBody(),
+                    Error::INTERNAL_SERVER_ERROR
+                );
             } elseif ($httpStatus != 200) {
-                $result = $this->getError($httpStatus, $body)
+                $result = static::getError($httpStatus, $body);
             } else {
                 $result = $body[ "result" ];
             }
@@ -114,13 +118,15 @@ namespace Phasty\ServiceClient {
          *
          * @return Error  Исключение
          */
-        protected function getError($httpStatus, $error) {
+        protected static function getError($httpStatus, $error) {
             // Если код ошибки не пришел или он нулевой - это неклассифицированная ошибка!
             // Значит формат ответа в любом случае не соответствует API
-            $code = (empty($error[ "code" ]) || (int) $error[ "code" ] == 0) ? Error::INTERNAL_SERVER_ERROR : (int) $error[ "code" ];
+            $code = (empty($error[ "code" ]) || (int) $error[ "code" ] == 0) ?
+                Error::INTERNAL_SERVER_ERROR : (int) $error[ "code" ];
             $message = empty($error[ "message" ]) ? "" : $error[ "message" ];
 
-            $errorType = ($httpStatus == 400 && $code != Error::INTERNAL_SERVER_ERROR) ? Exception\ServiceError::class : Exception\InternalServerError::class;
+            $errorType = ($httpStatus == 400 && $code != Error::INTERNAL_SERVER_ERROR) ?
+                Exception\RequestError::class : Exception\InternalServerError::class;
             return new $errorType($message, $code);
         }
 
