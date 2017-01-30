@@ -2,7 +2,8 @@
 namespace Phasty\ServiceClient {
 
     use \Phasty\Stream\Stream;
-    use \Phasty\ServiceClient\Exception;
+    use \Phasty\ServiceClient\Exception\InternalServerError;
+    use \Phasty\ServiceClient\Exception\RequestError;
 
     class Result {
         const OPERATION_TIMEOUT_MICROSECONDS = 3000000;
@@ -48,7 +49,7 @@ namespace Phasty\ServiceClient {
             $httpStatus = $response->getCode();
 
             if (is_null($body)) {
-                $result = new Exception\InternalServerError(
+                $result = new InternalServerError(
                     "Service response is not json:\n " . $response->getBody(),
                     Error::INTERNAL_SERVER_ERROR
                 );
@@ -126,7 +127,7 @@ namespace Phasty\ServiceClient {
             $message = empty($error[ "message" ]) ? "" : $error[ "message" ];
 
             $errorType = ($httpStatus == 400 && $code != Error::INTERNAL_SERVER_ERROR) ?
-                Exception\RequestError::class : Exception\InternalServerError::class;
+                RequestError::class : InternalServerError::class;
             return new $errorType($message, $code);
         }
 
