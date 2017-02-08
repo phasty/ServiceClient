@@ -21,19 +21,23 @@ namespace Phasty\ServiceClient {
          * Задает функцию для обработки результата запроса. Полезно для кеширования результата.
          * Функция должна возвращать обработанные данные
          *
-         * @param callable $func функция принимает на входе значение - результат запроса к сервису.
+         * @param callable $resolver функция принимает на входе значение - результат запроса к сервису.
          *
          * @return Result
          *
          * @throws \Exception
          */
-        public function onResolve(callable $func) {
+        public function onResolve(callable $resolver) {
             if ($this->future || $this->promise) {
                 throw new \Exception("You could not assign callback after process has been executed!");
             }
-            $this->onResolve = $func;
-            return $this;
-        }
+            if (is_callable($this->onResolve)) {
+                $innerResolver = $this->onResolve;
+                $this->onResolve = function($onResolveArgument) use ($resolver, $innerResolver) {
+                    return $resolver($innerResolver($onResolveArgument));
+                };
+            } else {
+                $this->onResolve = $resolver;
 
         /**
          * Обрабатыват результат запроса с сервиса.
