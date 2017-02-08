@@ -12,6 +12,7 @@ namespace Phasty\ServiceClient {
         protected $promise   = null;
         protected $future    = null;
         protected $onResolve = null;
+        protected $onReject  = null;
 
         public function __construct($stream) {
             $this->stream = $stream;
@@ -31,13 +32,29 @@ namespace Phasty\ServiceClient {
             if ($this->future || $this->promise) {
                 throw new \Exception("You could not assign callback after process has been executed!");
             }
-            if (is_callable($this->onResolve)) {
-                $innerResolver = $this->onResolve;
-                $this->onResolve = function($onResolveArgument) use ($resolver, $innerResolver) {
-                    return $resolver($innerResolver($onResolveArgument));
-                };
-            } else {
-                $this->onResolve = $resolver;
+            $this->onResolve = $resolver;
+
+            return $this;
+        }
+
+        /**
+         * Задает функцию для обработки результата запроса. Полезно для кеширования результата.
+         * Функция должна возвращать обработанные данные
+         *
+         * @param callable $rejectWith функция принимает на входе значение - результат запроса к сервису.
+         *
+         * @return Result
+         *
+         * @throws \Exception
+         */
+        public function onReject(callable $rejectWith) {
+            if ($this->future || $this->promise) {
+                throw new \Exception("You could not assign callback after process has been executed!");
+            }
+            $this->onReject = $rejectWith;
+
+            return $this;
+        }
 
         /**
          * Обрабатыват результат запроса с сервиса.
@@ -79,7 +96,7 @@ namespace Phasty\ServiceClient {
             if ($this->promise) {
                 return $this->promise;
             }
-            return $this->promise = Promise::create($this->stream, $this->onResolve);
+            return $this->promise = Promise::create($this->stream, $this->onResolve, $this->onReject);
         }
 
         /**
@@ -96,7 +113,7 @@ namespace Phasty\ServiceClient {
             if ($this->future) {
                 return $this->future;
             }
-            return $this->future = Future::create($this->stream, $this->onResolve);
+            return $this->future = Future::create($this->stream, $this->onResolve, $this->onReject);
         }
 
         /**

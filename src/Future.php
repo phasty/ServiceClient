@@ -10,17 +10,19 @@ namespace Phasty\ServiceClient {
         protected $stream    = null;
         protected $resolved  = false;
         protected $onResolve = null;
+        protected $onReject  = null;
 
         /**
          * Метод-фабрика для конструктора
          *
          * @param Stream   $stream       поток для чтения ответа
          * @param callable $onResolve   callback функция для обработки результата операции
+         * @param callable $onReject    функция-обработчик неуспешного результата (исключения)
          *
          * @return Future
          */
-        public static function create($stream, $onResolve) {
-            return new static($stream, $onResolve);
+        public static function create($stream, $onResolve, $onReject) {
+            return new static($stream, $onResolve, $onReject);
         }
 
         /**
@@ -29,9 +31,11 @@ namespace Phasty\ServiceClient {
          *
          * @param Stream        $stream
          * @param null|callable $onResolve  функция-обработчик результата
+         * @param null|callable $onReject   функция-обработчик неуспешного результата (исключения)
          */
-        protected function __construct($stream, $onResolve) {
+        protected function __construct($stream, $onResolve, $onReject) {
             $this->onResolve = $onResolve;
+            $this->onReject = $onReject;
             if (!$stream instanceof Stream) {
                 $this->resolveWith($stream);
                 return;
@@ -49,6 +53,16 @@ namespace Phasty\ServiceClient {
                 try {
                     $value = call_user_func($this->onResolve, $value);
                 } catch (\Exception $e) {
+                    $value = $e;
+                }
+            }
+
+            // Если в результате попытки резолва произошла беда, или беда вернулась из сервиса
+            if (($value instanceof \Exception) && is_callable($this->onReject)) {
+                try {
+                    $value = call_user_func($this->onReject, $value);
+                } catch (\Exception $e) {
+                    // Тут уже вообще все плохо - все сломалось в onReject!
                     $value = $e;
                 }
             }
