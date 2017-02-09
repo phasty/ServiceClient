@@ -50,25 +50,17 @@ namespace Phasty\ServiceClient {
         }
 
         /**
-         * Устанавливает зарезолвленное значение, которое может являться исключением
+         * Устанавливает зарезолвленное значение, которое может являться исключением.
+         * При этом вызываются обработчики результата в случае успеха или неудачи.
          *
          * @param mixed $value Ответ асинхронной операции либо исключение
          */
         protected function resolveWith($value) {
-            if (is_callable($this->onResolve) && !($value instanceof \Exception)) {
+            $callback = ($value instanceof \Exception) ? $this->onReject : $this->onResolve;
+            if (is_callable($callback)) {
                 try {
-                    $value = call_user_func($this->onResolve, $value);
+                    $value = call_user_func($callback, $value);
                 } catch (\Exception $e) {
-                    $value = $e;
-                }
-            }
-
-            // Если в результате попытки резолва произошла беда, или беда вернулась из сервиса
-            if (($value instanceof \Exception) && is_callable($this->onReject)) {
-                try {
-                    $value = call_user_func($this->onReject, $value);
-                } catch (\Exception $e) {
-                    // Тут уже вообще все плохо - все сломалось в onReject!
                     $value = $e;
                 }
             }

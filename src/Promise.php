@@ -34,8 +34,8 @@ namespace Phasty\ServiceClient {
         }
 
         /**
-         * Устанавливает зарезолвленное значение. Если значение является исключением
-         * результат промиса принимает состояние rejected.
+         * Устанавливает зарезолвленное значение. При этом вызываются установленные обработчки на успешного результата
+         * или ошибки. Если значение является исключением результат промиса принимает состояние rejected.
          *
          * @param Deferred      $deferred
          * @param mixed         $result     Ответ асинхронной операции либо исключение
@@ -43,20 +43,11 @@ namespace Phasty\ServiceClient {
          * @param null|callable $onReject   Функция-обработчик неуспешного результата
          */
         public static function resolveWith($deferred, $result, $onResolve, $onReject) {
-            if (is_callable($onResolve) && !($result instanceof \Exception)) {
+            $callback = ($result instanceof \Exception) ? $onReject : $onResolve;
+            if (is_callable($callback)) {
                 try {
-                    $result = call_user_func($onResolve, $result);
+                    $result = call_user_func($callback, $result);
                 } catch (\Exception $e) {
-                    $result = $e;
-                }
-            }
-
-            // Если в результате попытки резолва произошла беда, или беда вернулась из сервиса
-            if (($result instanceof \Exception) && is_callable($onReject)) {
-                try {
-                    $result = call_user_func($onReject, $result);
-                } catch (\Exception $e) {
-                    // Тут уже вообще все плохо - все сломалось в onReject!
                     $result = $e;
                 }
             }
