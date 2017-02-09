@@ -5,6 +5,13 @@ namespace Phasty\ServiceClient {
     use \Phasty\ServiceClient\Exception\InternalServerError;
     use \Phasty\ServiceClient\Exception\RequestError;
 
+    /**
+     * Class Result
+     * Класс для работы с результатом запроса в сервис.
+     * При этом не известно, чем является результат (Promise или Future).
+     *
+     * @package Phasty\ServiceClient
+     */
     class Result {
         const OPERATION_TIMEOUT_MICROSECONDS = 3000000;
         const OPERATION_TIMEOUT_SECONDS      = 20;

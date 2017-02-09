@@ -5,6 +5,12 @@ namespace Phasty\ServiceClient {
     use \Phasty\Stream\StreamSet;
     use \Phasty\Stream\Timer;
 
+    /**
+     * Class Future
+     * Класс для работы с Future
+     *
+     * @package Phasty\ServiceClient
+     */
     class Future {
         protected $value     = null;
         protected $stream    = null;
@@ -13,7 +19,7 @@ namespace Phasty\ServiceClient {
         protected $onReject  = null;
 
         /**
-         * Метод-фабрика для конструктора
+         * Метод-фабрика для конструктора Future
          *
          * @param Stream   $stream       поток для чтения ответа
          * @param callable $onResolve   callback функция для обработки результата операции

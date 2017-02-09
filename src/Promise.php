@@ -1,11 +1,28 @@
 <?php
 namespace Phasty\ServiceClient {
+
     use \React\Promise\Deferred;
     use \Phasty\Stream\StreamSet;
     use \Phasty\Stream\Stream;
     use \Phasty\Stream\Timer;
 
+    /**
+     * Class Promise
+     * Класс для создания промиса
+     *
+     * @package Phasty\ServiceClient
+     */
     class Promise {
+
+        /**
+         * Метод-фабрика для конструктора Promise
+         *
+         * @param mixed         $stream
+         * @param null|callable $onResolve  Функция-обработчик результата
+         * @param null|callable $onReject   Функция-обработчик неуспешного результата
+         *
+         * @return \React\Promise\Promise|\React\Promise\PromiseInterface
+         */
         public static function create($stream, $onResolve, $onReject) {
             $deferred = new Deferred();
             if (!$stream instanceof Stream) {
@@ -20,8 +37,8 @@ namespace Phasty\ServiceClient {
          * Устанавливает зарезолвленное значение. Если значение является исключением
          * результат промиса принимает состояние rejected.
          *
-         * @param Deferred $deferred
-         * @param mixed    $result     Ответ асинхронной операции либо исключение
+         * @param Deferred      $deferred
+         * @param mixed         $result     Ответ асинхронной операции либо исключение
          * @param null|callable $onResolve  Функция-обработчик результата
          * @param null|callable $onReject   Функция-обработчик неуспешного результата
          */
