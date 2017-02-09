@@ -5,22 +5,30 @@ namespace Phasty\ServiceClient {
     use \Phasty\Stream\StreamSet;
     use \Phasty\Stream\Timer;
 
+    /**
+     * Class Future
+     * Класс для работы с Future
+     *
+     * @package Phasty\ServiceClient
+     */
     class Future {
         protected $value     = null;
         protected $stream    = null;
         protected $resolved  = false;
         protected $onResolve = null;
+        protected $onReject  = null;
 
         /**
-         * Метод-фабрика для конструктора
+         * Метод-фабрика для конструктора Future
          *
          * @param Stream   $stream       поток для чтения ответа
          * @param callable $onResolve   callback функция для обработки результата операции
+         * @param callable $onReject    функция-обработчик неуспешного результата (исключения)
          *
          * @return Future
          */
-        public static function create($stream, $onResolve) {
-            return new static($stream, $onResolve);
+        public static function create($stream, $onResolve, $onReject) {
+            return new static($stream, $onResolve, $onReject);
         }
 
         /**
@@ -29,9 +37,11 @@ namespace Phasty\ServiceClient {
          *
          * @param Stream        $stream
          * @param null|callable $onResolve  функция-обработчик результата
+         * @param null|callable $onReject   функция-обработчик неуспешного результата (исключения)
          */
-        protected function __construct($stream, $onResolve) {
+        protected function __construct($stream, $onResolve, $onReject) {
             $this->onResolve = $onResolve;
+            $this->onReject = $onReject;
             if (!$stream instanceof Stream) {
                 $this->resolveWith($stream);
                 return;
@@ -40,14 +50,16 @@ namespace Phasty\ServiceClient {
         }
 
         /**
-         * Устанавливает зарезолвленное значение, которое может являться исключением
+         * Устанавливает зарезолвленное значение, которое может являться исключением.
+         * При этом вызываются обработчики результата в случае успеха или неудачи.
          *
          * @param mixed $value Ответ асинхронной операции либо исключение
          */
         protected function resolveWith($value) {
-            if (is_callable($this->onResolve) && !($value instanceof \Exception)) {
+            $callback = ($value instanceof \Exception) ? $this->onReject : $this->onResolve;
+            if (is_callable($callback)) {
                 try {
-                    $value = call_user_func($this->onResolve, $value);
+                    $value = call_user_func($callback, $value);
                 } catch (\Exception $e) {
                     $value = $e;
                 }

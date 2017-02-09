@@ -5,6 +5,13 @@ namespace Phasty\ServiceClient {
     use \Phasty\ServiceClient\Exception\InternalServerError;
     use \Phasty\ServiceClient\Exception\RequestError;
 
+    /**
+     * Class Result
+     * Класс для работы с результатом запроса в сервис.
+     * При этом не известно, чем является результат (Promise или Future).
+     *
+     * @package Phasty\ServiceClient
+     */
     class Result {
         const OPERATION_TIMEOUT_MICROSECONDS = 3000000;
         const OPERATION_TIMEOUT_SECONDS      = 20;
@@ -12,6 +19,7 @@ namespace Phasty\ServiceClient {
         protected $promise   = null;
         protected $future    = null;
         protected $onResolve = null;
+        protected $onReject  = null;
 
         public function __construct($stream) {
             $this->stream = $stream;
@@ -21,17 +29,37 @@ namespace Phasty\ServiceClient {
          * Задает функцию для обработки результата запроса. Полезно для кеширования результата.
          * Функция должна возвращать обработанные данные
          *
-         * @param callable $func функция принимает на входе значение - результат запроса к сервису.
+         * @param callable $resolver функция принимает на входе значение - результат запроса к сервису.
          *
          * @return Result
          *
          * @throws \Exception
          */
-        public function onResolve(callable $func) {
+        public function onResolve(callable $resolver) {
             if ($this->future || $this->promise) {
                 throw new \Exception("You could not assign callback after process has been executed!");
             }
-            $this->onResolve = $func;
+            $this->onResolve = $resolver;
+
+            return $this;
+        }
+
+        /**
+         * Задает функцию для обработки результата запроса. Полезно для кеширования результата.
+         * Функция должна возвращать обработанные данные
+         *
+         * @param callable $rejectWith функция принимает на входе значение - результат запроса к сервису.
+         *
+         * @return Result
+         *
+         * @throws \Exception
+         */
+        public function onReject(callable $rejectWith) {
+            if ($this->future || $this->promise) {
+                throw new \Exception("You could not assign callback after process has been executed!");
+            }
+            $this->onReject = $rejectWith;
+
             return $this;
         }
 
@@ -75,7 +103,7 @@ namespace Phasty\ServiceClient {
             if ($this->promise) {
                 return $this->promise;
             }
-            return $this->promise = Promise::create($this->stream, $this->onResolve);
+            return $this->promise = Promise::create($this->stream, $this->onResolve, $this->onReject);
         }
 
         /**
@@ -92,7 +120,7 @@ namespace Phasty\ServiceClient {
             if ($this->future) {
                 return $this->future;
             }
-            return $this->future = Future::create($this->stream, $this->onResolve);
+            return $this->future = Future::create($this->stream, $this->onResolve, $this->onReject);
         }
 
         /**
