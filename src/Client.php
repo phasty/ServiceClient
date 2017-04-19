@@ -49,6 +49,10 @@ namespace Phasty\ServiceClient {
             });
 
             try {
+                $appUid = $this->getAppUid();
+                if ($appUid !== null) {
+                    $arguments["app-uid"] = $appUid;
+                }
                 $body    = $this->encodeArguments($arguments);
                 $request = $this->buildRequest($parsedUri + compact("body"));
                 $socket  = $this->getSocket($parsedUri);
@@ -73,6 +77,10 @@ namespace Phasty\ServiceClient {
 
         protected function getServiceUri() {
             throw new \Exception("Service URI not configured");
+        }
+
+        protected function getAppUid() {
+            return null;
         }
 
         public static function isWaitingForServices() {
