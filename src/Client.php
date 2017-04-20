@@ -25,12 +25,16 @@ namespace Phasty\ServiceClient {
         }
 
         private function buildRequest($data) {
-            return
-                "POST " . $data[ "path" ] . " HTTP/1.0\n" .
+            $header = "POST " . $data[ "path" ] . " HTTP/1.0\n" .
                 "HOST: " . $data[ "host" ] . $this->getPort($data) . "\n" .
                 "Content-Type: application/json\n" .
-                "Content-Length: " . strlen($data[ "body" ]) . "\n\n" .
-                $data[ "body" ];
+                "Content-Length: " . strlen($data[ "body" ]) . "\n";
+            $appUid = $this->getAppUid();
+            if ($appUid !== null) {
+                $header .= "App-Uid: " . $appUid . "\n";
+            }
+            $header .= "\n";
+            return $header . $data[ "body" ];
         }
 
         private function getSocket($uriInfo) {
@@ -73,6 +77,10 @@ namespace Phasty\ServiceClient {
 
         protected function getServiceUri() {
             throw new \Exception("Service URI not configured");
+        }
+
+        protected function getAppUid() {
+            return null;
         }
 
         public static function isWaitingForServices() {
